@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interviewa AI Candidate Interview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-100 p-6">
+    <div class="mx-auto max-w-4xl rounded-3xl bg-white p-8 shadow-lg ring-1 ring-slate-200">
+      <div class="border-b border-slate-200 pb-5">
+        <p class="text-xs uppercase tracking-[0.2em] text-indigo-600">Interviewa AI</p>
+        <h1 class="mt-2 text-3xl font-bold text-slate-900">{{COMPANY_NAME}}</h1>
+        <p class="mt-2 text-lg text-slate-600">{{JOB_TITLE}} interview</p>
+      </div>
+
+      <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+          <p class="text-sm font-medium text-slate-500">Candidate</p>
+          <h2 class="mt-2 text-2xl font-semibold text-slate-900">{{CANDIDATE_NAME}}</h2>
+
+          <div class="mt-6 space-y-3 text-sm text-slate-700">
+            <p><strong>Format:</strong> Live voice interview — natural conversation, no fixed question limit</p>
+            <p><strong>Languages:</strong> English & Kiswahili — speak either, switch anytime by voice</p>
+            <p><strong>AI disclosure:</strong> This interview is conducted by Interviewa AI and reviewed by a human recruiter.</p>
+            <p><strong>Privacy notice:</strong> Your interview recording and transcript are used only for assessment and human review.</p>
+          </div>
+
+          <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Human review is required. AI-generated evidence does not make employment decisions.
+          </div>
+
+          <div class="mt-6 space-y-3">
+            <label class="flex items-start gap-3 text-sm text-slate-700">
+              <input id="consent" type="checkbox" class="mt-1" />
+              <span>I consent to audio recording, transcription, and human review of my interview.</span>
+            </label>
+            <label class="flex items-start gap-3 text-sm text-slate-700">
+              <input id="humanRequested" type="checkbox" class="mt-1" />
+              <span>I request a human interviewer and/or accommodation review.</span>
+            </label>
+            <label class="flex items-start gap-3 text-sm text-slate-700">
+              <input id="accessibilityMode" type="checkbox" class="mt-1" checked />
+              <span>Accessibility mode: screen-reader optimized, high contrast, voice commands announced.</span>
+            </label>
+          </div>
+
+          <div class="mt-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-800" role="region" aria-label="Voice commands help">
+            <p class="font-medium mb-2">🎙 Voice commands you can say anytime:</p>
+            <ul class="space-y-1 list-disc list-inside">
+              <li><strong>"Pause interview"</strong> / <strong>"Pumzisha mahojiano"</strong> — Take a break</li>
+              <li><strong>"Rephrase that"</strong> / <strong>"Sema upya"</strong> — Repeat/rephrase last question</li>
+              <li><strong>"Switch to Swahili"</strong> / <strong>"Badilisha kwa Kiswahili"</strong></li>
+              <li><strong>"Switch to English"</strong> / <strong>"Badilisha kwa Kiingereza"</strong></li>
+              <li><strong>"Human interviewer"</strong> / <strong>"Mhojiwa binadamu"</strong> — Request human review</li>
+            </ul>
+          </div>
+
+          <button id="startInterview" class="mt-6 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-500">
+            Begin interview
+          </button>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-sm font-medium text-slate-500">Live status</p>
+          <div id="status" class="mt-4 inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">Connecting</div>
+          <div id="speakingState" class="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700">
+            Interviewer ready
+          </div>
+          <div id="languageState" class="mt-3 text-sm font-medium text-slate-600" aria-live="polite">Language: English</div>
+
+          <div class="mt-6 space-y-3 text-sm text-slate-700">
+            <div>• Live interview active</div>
+            <div>• Listening</div>
+            <div>• Processing</div>
+            <div>• Talking</div>
+            <div>• Human review</div>
+          </div>
+        </div>
+      </div>
+
+<div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p class="text-sm text-slate-500">Transcript</p>
+        <div id="transcript" class="mt-3 space-y-2 text-sm text-slate-700" aria-live="polite" aria-atomic="false">
+          <p>AI interviewer: Hello, I'm Interviewa AI. I'll ask a few structured questions about your experience and fit for the role.</p>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <script>
+      const currentHost = window.location.hostname;
+      const isPrivateDevelopmentHost = currentHost === '0.0.0.0'
+        || /^10\./.test(currentHost)
+        || /^192\.168\./.test(currentHost)
+        || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(currentHost);
+      if (window.location.protocol === 'http:' && isPrivateDevelopmentHost) {
+        window.location.replace(`http://localhost:8000${window.location.pathname}${window.location.search}`);
+      }
+
+      const statusEl = document.getElementById('status');
+      const transcriptEl = document.getElementById('transcript');
+      const startBtn = document.getElementById('startInterview');
+      const speakingStateEl = document.getElementById('speakingState');
+      const languageStateEl = document.getElementById('languageState');
+      const accessibilityModeEl = document.getElementById('accessibilityMode');
+      const token = '{{TOKEN}}';
+      const companyName = '{{COMPANY_NAME}}';
+      const jobTitle = '{{JOB_TITLE}}';
+      const jobCriteria = '{{CRITERIA}}';
+      const interviewAreas = {{INTERVIEW_AREAS}};
+      const initialInterviewStatus = '{{INTERVIEW_STATUS}}';
+      let socket = null;
+      let audioContext = null;
+      let mediaStream = null;
+      let scriptProcessor = null;
+      let audioSource = null;
+      let interviewLive = false;
+      let audioQueueEnd = 0;
+      let activeSources = [];
+      let interviewClosed = false;
+      let currentLanguage = 'english';
+
+      function markInterviewClosed(statusText = 'Interview closed') {
+        interviewClosed = true;
+        interviewLive = false;
+        startBtn.textContent = statusText;
+        startBtn.disabled = true;
+        startBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-500');
+        startBtn.classList.add('cursor-not-allowed', 'bg-slate-300', 'text-slate-600');
+      }
+
+      function setSpeakingState(label) {
+        speakingStateEl.textContent = label;
+      }
+
+      function formatInterviewAreas() {
+        return Object.entries(interviewAreas).map(([area, questions]) => `${area}: ${questions.map((question) => `- ${question}`).join(' ')}`).join('\n');
+      }
+
+      function setStatus(text, tone) {
+        statusEl.textContent = text;
+        statusEl.className = `mt-4 inline-flex rounded-full px-3 py-1 text-sm font-medium ${tone}`;
+      }
+
+      function appendTranscript(text, color = 'text-slate-700') {
+        const line = document.createElement('p');
+        line.className = color;
+        line.textContent = text;
+        transcriptEl.appendChild(line);
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      }
+
+      function base64ToBytes(value) {
+        const binary = atob(value);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) {
+          bytes[index] = binary.charCodeAt(index);
+        }
+        return bytes;
+      }
+
+      function playAgentAudio(base64Audio) {
+        if (!audioContext) {
+          return;
+        }
+
+        const bytes = base64ToBytes(base64Audio);
+        const samples = new Int16Array(bytes.buffer);
+        const audioBuffer = audioContext.createBuffer(1, samples.length, 24000);
+        const channel = audioBuffer.getChannelData(0);
+        for (let index = 0; index < samples.length; index += 1) {
+          channel[index] = samples[index] / 32768;
+        }
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        const startAt = Math.max(audioContext.currentTime + 0.03, audioQueueEnd);
+        source.start(startAt);
+        audioQueueEnd = startAt + audioBuffer.duration;
+        activeSources.push(source);
+        source.onended = () => {
+          activeSources = activeSources.filter((item) => item !== source);
+        };
+      }
+
+      function stopAgentAudio() {
+        activeSources.forEach((source) => {
+          try {
+            source.stop();
+          } catch (error) {
+            console.debug('Audio source already stopped', error);
+          }
+        });
+        activeSources = [];
+        audioQueueEnd = 0;
+      }
+
+      function floatTo16BitPCM(floatSamples) {
+        const int16 = new Int16Array(floatSamples.length);
+        for (let i = 0; i < floatSamples.length; i += 1) {
+          const s = Math.max(-1, Math.min(1, floatSamples[i]));
+          int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        return int16;
+      }
+
+      async function beginInterviewOnServer(consented, humanReviewRequested) {
+        const response = await fetch(`/api/candidate/interview/${token}/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ consented, human_review_requested: humanReviewRequested }),
+          credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+          if (response.status === 409) {
+            throw new Error('Interview already closed');
+          }
+          throw new Error('Interview start failed');
+        }
+      }
+
+      async function closeInterviewOnServer(status = 'completed') {
+        if (interviewClosed) {
+          return;
+        }
+
+        const response = await fetch(`/api/candidate/interview/${token}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok && response.status !== 409) {
+          throw new Error('Interview close failed');
+        }
+        interviewClosed = true;
+      }
+
+      async function completeFromAgentTool(callId) {
+        let result;
+        try {
+          await closeInterviewOnServer('completed');
+          result = { ok: true };
+          setStatus('Completed', 'bg-slate-200 text-slate-800');
+          setSpeakingState('Interview completed');
+          appendTranscript('Interview finished. The result is ready for human review.', 'text-emerald-700');
+          markInterviewClosed('Interview completed');
+        } catch (error) {
+          console.error(error);
+          result = { ok: false, error: 'The interview could not be marked finished.' };
+        }
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'tool.result',
+            call_id: callId,
+            result: JSON.stringify(result),
+          }));
+        }
+      }
+
+      async function saveAgentScore(callId, argumentsValue) {
+        let result = { ok: false, error: 'Score could not be saved.' };
+        try {
+          const scorePayload = typeof argumentsValue === 'string' ? JSON.parse(argumentsValue) : argumentsValue;
+          const response = await fetch(`/api/candidate/interview/${token}/score`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(scorePayload),
+          });
+          if (!response.ok) throw new Error('Score request failed');
+          result = { ok: true };
+        } catch (error) {
+          console.error(error);
+        }
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: 'tool.result', call_id: callId, result: JSON.stringify(result) }));
+        }
+      }
+
+      window.addEventListener('pagehide', () => {
+        if (!interviewLive || interviewClosed) {
+          return;
+        }
+
+        navigator.sendBeacon(
+          `/api/candidate/interview/${token}/complete`,
+          new Blob([JSON.stringify({ status: 'ended' })], { type: 'application/json' }),
+        );
+      });
+
+      async function createRealtimeSession() {
+        const response = await fetch(`/api/assemblyai/session-token/${token}`, {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+          let detail = 'Session token request failed';
+          try {
+            const payload = await response.json();
+            detail = payload.detail || detail;
+          } catch (error) {
+            console.debug('Could not read token error response', error);
+          }
+          throw new Error(detail);
+        }
+
+        const payload = await response.json();
+        return payload.token;
+      }
+
+      function openAssemblySession(sessionToken) {
+        const wsUrl = `wss://agents.assemblyai.com/v1/ws?token=${encodeURIComponent(sessionToken)}`;
+        socket = new WebSocket(wsUrl);
+
+socket.onopen = () => {
+          setStatus('Starting live agent', 'bg-amber-100 text-amber-800');
+          socket.send(JSON.stringify({
+            type: 'session.update',
+            session: {
+              system_prompt: `You are Interviewa AI, a professional AI interviewer for ${companyName}. You are conducting a structured job interview for the ${jobTitle} role.
+
+STRICT INTERVIEW RULES:
+1. DO NOT REPHRASE, REPEAT, EVALUATE, SUMMARIZE, OR CORRECT THE CANDIDATE'S ANSWERS.
+2. Acknowledge candidate responses with 1 to 3 words MAX (e.g. "Thank you.", "Understood.", "Got it.", "Makes sense.", "Sawa, asante.") before asking the next question.
+3. NEVER mirror, repeat, or explain candidate answers back to them. Move directly to the next question.
+4. Ask ONE question at a time.
+5. Evaluate only job-related criteria: ${jobCriteria || 'the published job requirements'}.
+
+LANGUAGE SUPPORT: This interview supports BOTH English and Kiswahili.
+- Detect the candidate's language automatically from their speech
+- Respond in the SAME language they use
+- All responses, acknowledgments, and questions must be in the active language
+- Start in English unless they open in Kiswahili
+
+Approved topics to explore:
+${formatInterviewAreas()}
+
+VOICE COMMANDS candidate may use:
+- "pause interview" / "pumzisha mahojiano" → Call pause_interview tool
+- "rephrase that" / "sema upya" → Call rephrase_question tool
+- "switch to Swahili" / "badilisha kwa Kiswahili" → Call switch_language tool with "swahili"
+- "switch to English" / "badilisha kwa Kiingereza" → Call switch_language tool with "english"
+- "human interviewer" / "mhojiwa binadamu" → Call request_human_interviewer tool
+
+Opening (English): Greet naturally, explain this is a conversation for human review, then ask: "To get started, tell me about yourself and your relevant experience for this role."
+
+Opening (Kiswahili): Greet naturally: "Habari, mimi ni Interviewa AI. Tutafanya mahojiano kwa ajili ya nafasi ya ${jobTitle} kwa ${companyName}. Yote utakayosema yatachunguzwa na timu ya uajiri. Hebu tuanze: nieleze kuhusu wewe na uzoefu wako kwa nafasi hii."
+
+Closing: After exploring 4-6 areas, say: "Thank you for your time. Your responses will be reviewed by our hiring team." then call finish_interview and score_interview.`,
+              greeting: `Hello, thank you for joining me today. I'm Interviewa AI, and I'll be conducting your interview for the ${jobTitle} role at ${companyName}. Everything you share will be reviewed by our hiring team. You can speak English or Kiswahili, and switch anytime. To get started, tell me about yourself and your relevant experience for this role.`,
+              input: {
+                format: { encoding: 'audio/pcm' },
+                turn_detection: {
+                  vad_threshold: 0.5,
+                  min_silence: 400,
+                  max_silence: 1000,
+                  interrupt_response: true,
+                },
+              },
+              tools: [{
+                type: 'function',
+                name: 'score_interview',
+                description: 'Record a transparent, job-related AI evidence score before the interview is finished. Use only factual evidence from candidate answers. Call exactly once.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    score: { type: 'number', description: 'Overall evidence score from 0 to 100.' },
+                    criteria_scores: { type: 'object', description: 'Criterion names mapped to scores from 0 to 100.' },
+                    rationale: { type: 'string', description: 'Concise factual rationale for the score.' },
+                  },
+                  required: ['score', 'criteria_scores', 'rationale'],
+                },
+                execution_mode: 'hold',
+              }, {
+                type: 'function',
+                name: 'finish_interview',
+                description: 'Close the interview after the final candidate answer. This must be called exactly once when the interview is finished.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    reason: {
+                      type: 'string',
+                      description: 'Short reason the interview is finished, such as conversation complete.',
+                    },
+                  },
+                  required: ['reason'],
+                },
+                execution_mode: 'hold',
+              }, {
+                type: 'function',
+                name: 'pause_interview',
+                description: 'Pause the interview when candidate requests a break. Call when candidate says "pause interview" or "pumzisha mahojiano".',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    reason: { type: 'string', description: 'Reason for pause, e.g., candidate requested break.' },
+                  },
+                  required: ['reason'],
+                },
+                execution_mode: 'hold',
+              }, {
+                type: 'function',
+                name: 'rephrase_question',
+                description: 'Rephrase or repeat the last question when candidate asks. Call when candidate says "rephrase that", "sema upya", or "repeat the question".',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    last_question: { type: 'string', description: 'The last question asked by the interviewer.' },
+                    language: { type: 'string', enum: ['english', 'swahili'], description: 'Language to rephrase in.' },
+                  },
+                  required: ['last_question', 'language'],
+                },
+                execution_mode: 'hold',
+              }, {
+                type: 'function',
+                name: 'switch_language',
+                description: 'Switch interview language when candidate requests. Call when candidate says "switch to Swahili"/"badilisha kwa Kiswahili" or "switch to English"/"badilisha kwa Kiingereza".',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    language: { type: 'string', enum: ['english', 'swahili'], description: 'Target language for the interview.' },
+                  },
+                  required: ['language'],
+                },
+                execution_mode: 'hold',
+              }, {
+                type: 'function',
+                name: 'request_human_interviewer',
+                description: 'Log candidate request for human interviewer or accommodation. Call when candidate says "human interviewer" or "mhojiwa binadamu".',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    reason: { type: 'string', description: 'Reason candidate requested human interviewer.' },
+                  },
+                  required: ['reason'],
+                },
+                execution_mode: 'hold',
+              }],
+              output: {
+                voice: 'anna',
+                format: { encoding: 'audio/pcm' },
+                volume: 100,
+              },
+            },
+          }));
+        };
+
+        socket.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+
+          if (message.type === 'session.ready') {
+            setStatus('Live', 'bg-green-100 text-green-800');
+            setSpeakingState('Interviewer speaking...');
+            appendTranscript('Live AssemblyAI voice agent connected.', 'text-emerald-700');
+            return;
+          }
+
+          if (message.type === 'input.speech.started') {
+            stopAgentAudio();
+            setSpeakingState('Candidate speaking now');
+            return;
+          }
+
+          if (message.type === 'input.speech.stopped') {
+            setSpeakingState('Processing candidate response');
+            return;
+          }
+
+          if (message.type === 'transcript.user') {
+            if (message.text) {
+              appendTranscript(`Candidate: ${message.text}`, 'text-slate-700');
+            }
+            return;
+          }
+
+          if (message.type === 'reply.started') {
+            setSpeakingState('Interviewer speaking...');
+            return;
+          }
+
+          if (message.type === 'reply.audio' && message.data) {
+            playAgentAudio(message.data);
+            return;
+          }
+
+          if (message.type === 'transcript.agent' && message.text) {
+            appendTranscript(`AI interviewer: ${message.text}`, 'text-indigo-700');
+            return;
+          }
+
+          if (message.type === 'reply.done') {
+            setSpeakingState('Listening to candidate');
+            return;
+          }
+
+          if (message.type === 'tool.call' && message.name === 'finish_interview') {
+            setSpeakingState('Closing interview');
+            completeFromAgentTool(message.call_id);
+            return;
+          }
+
+          if (message.type === 'tool.call' && message.name === 'score_interview') {
+            setSpeakingState('Saving interview evidence');
+            saveAgentScore(message.call_id, message.arguments);
+            return;
+          }
+
+          if (message.type === 'tool.call' && message.name === 'pause_interview') {
+            setSpeakingState('Interview paused');
+            appendTranscript('⏸ Interview paused by candidate.', 'text-amber-700');
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'tool.result', call_id: message.call_id, result: JSON.stringify({ ok: true, message: 'Interview paused. Say "resume" to continue.' }) }));
+            }
+            return;
+          }
+
+          if (message.type === 'tool.call' && message.name === 'rephrase_question') {
+            setSpeakingState('Rephrasing question...');
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'tool.result', call_id: message.call_id, result: JSON.stringify({ ok: true, message: 'Question rephrased.' }) }));
+            }
+            return;
+          }
+
+          if (message.type === 'tool.call' && message.name === 'switch_language') {
+            let lang = 'English';
+            let langCode = 'english';
+            try {
+              const args = JSON.parse(message.arguments);
+              langCode = args.language;
+              lang = langCode === 'swahili' ? 'Kiswahili' : 'English';
+            } catch (e) {}
+            currentLanguage = langCode;
+            languageStateEl.textContent = `Language: ${lang}`;
+            setSpeakingState(`Language switched to ${lang}`);
+            appendTranscript(`🌐 Language switched to ${lang}.`, 'text-emerald-700');
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'tool.result', call_id: message.call_id, result: JSON.stringify({ ok: true, message: `Language switched to ${lang}.` }) }));
+            }
+            return;
+          }
+
+          if (message.type === 'tool.call' && message.name === 'request_human_interviewer') {
+            setSpeakingState('Human interviewer requested');
+            appendTranscript('👤 Candidate requested human interviewer / accommodation.', 'text-blue-700');
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'tool.result', call_id: message.call_id, result: JSON.stringify({ ok: true, message: 'Request logged. A human reviewer will follow up.' }) }));
+            }
+            return;
+          }
+
+          if (message.type === 'session.error') {
+            setStatus('Error', 'bg-red-100 text-red-800');
+            appendTranscript(`Voice agent error: ${message.message || message.error || 'Unknown AssemblyAI error'}`, 'text-red-700');
+            return;
+          }
+
+          if (message.type === 'session.ended') {
+
+            setStatus('Completed', 'bg-slate-200 text-slate-800');
+            setSpeakingState('Interview completed');
+            appendTranscript('Interview completed. The live transcript is ready for human review.', 'text-indigo-700');
+            markInterviewClosed('Interview completed');
+            closeInterviewOnServer('completed').catch((error) => {
+              console.error(error);
+              appendTranscript('The interview audio ended, but its final status could not be saved. Please contact the recruiter.', 'text-red-700');
+            });
+          }
+        };
+
+        socket.onerror = () => {
+
+          setStatus('Connection error', 'bg-red-100 text-red-800');
+          appendTranscript('The voice session could not be created. Check the server configuration and the AssemblyAI API key.', 'text-red-700');
+        };
+      }
+
+      async function setupMicrophone() {
+        if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          throw new Error(`Microphone access requires HTTPS or localhost. Open this interview through http://localhost:8000${window.location.pathname} instead of an IP address.`);
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Microphone access is not supported in this browser');
+        }
+
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              channelCount: 1,
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          });
+        } catch (error) {
+          if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            throw new Error('Microphone permission was denied. Allow microphone access in the browser and try again.');
+          }
+          throw new Error(`Microphone could not start: ${error.message || error.name}`);
+        }
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+        audioSource = audioContext.createMediaStreamSource(mediaStream);
+        scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+
+        audioSource.connect(scriptProcessor);
+        const silentMonitor = audioContext.createGain();
+        silentMonitor.gain.value = 0;
+        scriptProcessor.connect(silentMonitor);
+        silentMonitor.connect(audioContext.destination);
+
+        scriptProcessor.onaudioprocess = (event) => {
+          if (!socket || socket.readyState !== WebSocket.OPEN || !interviewLive) {
+            return;
+          }
+
+          const input = event.inputBuffer.getChannelData(0);
+
+          // Calculate RMS volume level to filter background room noise
+          let sum = 0;
+          for (let i = 0; i < input.length; i += 1) {
+            sum += input[i] * input[i];
+          }
+          const rms = Math.sqrt(sum / input.length);
+
+          // Suppress silence / room hiss when level is below threshold (0.002)
+          if (rms < 0.002) {
+            return;
+          }
+
+          const pcm = floatTo16BitPCM(input);
+          const bytes = new Uint8Array(pcm.buffer);
+          let binary = '';
+          for (let index = 0; index < bytes.length; index += 1) {
+            binary += String.fromCharCode(bytes[index]);
+          }
+          socket.send(JSON.stringify({ type: 'input.audio', audio: btoa(binary) }));
+        };
+      }
+
+      async function stopInterview() {
+        if (interviewClosed) {
+          return;
+        }
+        interviewLive = false;
+        stopAgentAudio();
+        try {
+          await closeInterviewOnServer('ended');
+        } catch (error) {
+          console.error(error);
+          appendTranscript('The interview stopped, but its final status could not be saved. Please contact the recruiter.', 'text-red-700');
+        }
+        markInterviewClosed('Interview ended');
+        if (scriptProcessor) {
+          scriptProcessor.disconnect();
+        }
+        if (audioSource) {
+          audioSource.disconnect();
+        }
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((track) => track.stop());
+        }
+        if (audioContext) {
+          await audioContext.close();
+        }
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          try {
+            socket.send(JSON.stringify({ type: 'session.end' }));
+          } catch (error) {
+            console.warn('Terminate message not sent:', error);
+          }
+          socket.close();
+        }
+        setSpeakingState('Interview ended');
+        setStatus('Interview stopped', 'bg-slate-200 text-slate-800');
+      }
+
+      startBtn.addEventListener('click', async () => {
+        const consentChecked = document.getElementById('consent').checked;
+        const humanRequested = document.getElementById('humanRequested').checked;
+
+        if (!consentChecked) {
+          setStatus('Consent required', 'bg-red-100 text-red-800');
+          appendTranscript('Consent is required before the interview may continue.', 'text-red-700');
+          return;
+        }
+
+        if (interviewLive) {
+          await stopInterview();
+          return;
+        }
+
+        startBtn.disabled = true;
+        setStatus('Connecting', 'bg-amber-100 text-amber-800');
+
+        try {
+          interviewClosed = false;
+          await beginInterviewOnServer(true, humanRequested);
+          const sessionToken = await createRealtimeSession();
+          await setupMicrophone();
+          interviewLive = true;
+          await audioContext.resume();
+          openAssemblySession(sessionToken);
+          startBtn.textContent = 'Stop interview';
+          startBtn.disabled = false;
+        } catch (error) {
+          console.error(error);
+          if (error.message === 'Interview already closed') {
+            markInterviewClosed('Interview already closed');
+            setStatus('Already closed', 'bg-slate-200 text-slate-800');
+            setSpeakingState('This interview cannot be restarted');
+            return;
+          }
+          setStatus('Error', 'bg-red-100 text-red-800');
+          appendTranscript(`Unable to start the voice interview: ${error.message || 'Unknown startup error'}`, 'text-red-700');
+          startBtn.disabled = false;
+        }
+      });
+
+      if (initialInterviewStatus === 'completed' || initialInterviewStatus === 'ended') {
+        markInterviewClosed(initialInterviewStatus === 'completed' ? 'Interview completed' : 'Interview ended');
+        setStatus(initialInterviewStatus === 'completed' ? 'Completed' : 'Ended', 'bg-slate-200 text-slate-800');
+        setSpeakingState('This interview cannot be restarted');
+      }
+    </script>
+  </body>
+</html>

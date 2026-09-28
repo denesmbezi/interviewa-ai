@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interviewer Training | {{PERSONA_NAME}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-100 p-6 text-slate-800">
+    <div class="mx-auto max-w-4xl rounded-3xl bg-white p-8 shadow-lg ring-1 ring-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-5">
+        <div>
+          <p class="text-xs uppercase tracking-[0.2em] text-indigo-600">Interviewa AI — Training Simulator</p>
+          <h1 class="mt-2 text-3xl font-bold text-slate-900">{{PERSONA_NAME}}</h1>
+          <p class="mt-1 text-slate-600">{{PERSONA_DESCRIPTION}}</p>
+        </div>
+        <a href="/" class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Back to workspace</a>
+      </div>
+
+      <div class="mt-8 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+          <p class="text-sm font-medium text-slate-500">Practice Goal</p>
+          <h2 class="mt-2 text-xl font-semibold text-slate-900">Conduct a practice interview</h2>
+          <p class="mt-3 text-sm leading-6 text-slate-600">
+            You are acting as the interviewer. The AI plays {{PERSONA_NAME}}. Practice your questioning, active listening, and redirection techniques.
+          </p>
+          <button id="startTraining" class="mt-6 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-500">
+            Start training interview
+          </button>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <p class="text-sm font-medium text-slate-500">Simulator status</p>
+          <div id="status" class="mt-4 inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">Ready</div>
+          <div id="speakingState" class="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700">
+            AI candidate ready
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p class="text-sm text-slate-500">Live Transcript</p>
+        <div id="transcript" class="mt-3 min-h-40 space-y-2 text-sm text-slate-700">
+          <p class="text-slate-500">Click "Start training interview" to connect with {{PERSONA_NAME}}.</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const currentHost = window.location.hostname;
+      const isPrivateDevelopmentHost = currentHost === '0.0.0.0'
+        || /^10\./.test(currentHost)
+        || /^192\.168\./.test(currentHost)
+        || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(currentHost);
+      if (window.location.protocol === 'http:' && isPrivateDevelopmentHost) {
+        window.location.replace(`http://localhost:8000${window.location.pathname}${window.location.search}`);
+      }
+
+      const personaSystemPrompt = "{{PERSONA_SYSTEM_PROMPT}}";
+      const personaVoice = "{{PERSONA_VOICE}}";
+      const startBtn = document.getElementById('startTraining');
+      const statusEl = document.getElementById('status');
+      const speakingStateEl = document.getElementById('speakingState');
+      const transcriptEl = document.getElementById('transcript');
+
+      let socket = null;
+      let audioContext = null;
+      let mediaStream = null;
+      let scriptProcessor = null;
+       let audioSource = null;
+       let isLive = false;
+       let activeSources = [];
+       let audioQueueEnd = 0;
+
+
+       function appendTranscript(text, color = 'text-slate-700') {
+         const line = document.createElement('p');
+         line.className = color;
+         line.textContent = text;
+         transcriptEl.appendChild(line);
+         transcriptEl.scrollTop = transcriptEl.scrollHeight;
+       }
+
+       function base64ToBytes(value) {
+         const binary = atob(value);
+         const bytes = new Uint8Array(binary.length);
+         for (let index = 0; index < binary.length; index += 1) {
+           bytes[index] = binary.charCodeAt(index);
+         }
+         return bytes;
+       }
+
+       function playAgentAudio(base64Audio) {
+         if (!audioContext) return;
+         const bytes = base64ToBytes(base64Audio);
+         const samples = new Int16Array(bytes.buffer);
+         const audioBuffer = audioContext.createBuffer(1, samples.length, 24000);
+         const channel = audioBuffer.getChannelData(0);
+         for (let index = 0; index < samples.length; index += 1) {
+           channel[index] = samples[index] / 32768;
+         }
+         const source = audioContext.createBufferSource();
+         source.buffer = audioBuffer;
+         source.connect(audioContext.destination);
+         const startAt = Math.max(audioContext.currentTime + 0.03, audioQueueEnd);
+         source.start(startAt);
+         audioQueueEnd = startAt + audioBuffer.duration;
+         activeSources.push(source);
+         source.onended = () => {
+           activeSources = activeSources.filter((item) => item !== source);
+         };
+       }
+
+       function stopAgentAudio() {
+         activeSources.forEach((source) => {
+           try { source.stop(); } catch (error) {}
+         });
+         activeSources = [];
+         audioQueueEnd = 0;
+       }
+
+
+      startBtn.addEventListener('click', async () => {
+        try {
+          startBtn.disabled = true;
+          statusEl.textContent = 'Connecting...';
+          const tokenRes = await fetch('/api/assemblyai/session-token', { method: 'POST', credentials: 'same-origin' });
+          if (!tokenRes.ok) {
+            let errorDetail = 'Session token request failed';
+            try {
+              const body = await tokenRes.json();
+              if (tokenRes.status === 401) {
+                errorDetail = 'Authentication required. Please log in to your Hiring Team workspace first.';
+              } else {
+                errorDetail = body.detail || errorDetail;
+              }
+            } catch (e) {}
+            throw new Error(errorDetail);
+          }
+          const { token } = await tokenRes.json();
+
+          if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            throw new Error(`Microphone access requires HTTPS or localhost. Please open this app via http://localhost:8000${window.location.pathname} instead of ${window.location.hostname}.`);
+          }
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Microphone access (navigator.mediaDevices.getUserMedia) is unavailable in this browser context.');
+          }
+
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, sampleRate: 24000 } });
+          audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+          audioSource = audioContext.createMediaStreamSource(mediaStream);
+          scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+           audioSource.connect(scriptProcessor);
+           const silentMonitor = audioContext.createGain();
+           silentMonitor.gain.value = 0;
+           scriptProcessor.connect(silentMonitor);
+           silentMonitor.connect(audioContext.destination);
+           await audioContext.resume();
+
+
+          const wsUrl = `wss://agents.assemblyai.com/v1/ws?token=${encodeURIComponent(token)}`;
+          socket = new WebSocket(wsUrl);
+
+          socket.onopen = () => {
+            socket.send(JSON.stringify({
+              type: 'session.update',
+              session: {
+                system_prompt: personaSystemPrompt,
+                greeting: "Hello, thank you for taking the time to interview me today.",
+                input: {
+                  format: { encoding: 'audio/pcm' },
+                  turn_detection: {
+                    vad_threshold: 0.5,
+                    min_silence: 400,
+                    max_silence: 1000,
+                    interrupt_response: true,
+                  },
+                },
+                output: { voice: personaVoice, format: { encoding: 'audio/pcm' } }
+              }
+            }));
+          };
+
+           socket.onmessage = (event) => {
+             const data = JSON.parse(event.data);
+             if (data.type === 'session.ready') {
+               statusEl.textContent = 'Live';
+               statusEl.className = 'mt-4 inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800';
+               speakingStateEl.textContent = 'AI candidate is listening';
+               appendTranscript('Connected to AI Candidate training session.', 'text-emerald-700');
+               isLive = true;
+             } else if (data.type === 'input.speech.started') {
+               speakingStateEl.textContent = 'Interviewer speaking';
+             } else if (data.type === 'input.speech.stopped') {
+               speakingStateEl.textContent = 'AI candidate is responding';
+             } else if (data.type === 'reply.started') {
+               speakingStateEl.textContent = 'AI candidate speaking';
+             } else if (data.type === 'reply.audio' && data.data) {
+               playAgentAudio(data.data);
+             } else if (data.type === 'reply.done') {
+               speakingStateEl.textContent = 'AI candidate is listening';
+             } else if (data.type === 'transcript.agent' && data.text) {
+               appendTranscript(`AI Candidate: ${data.text}`, 'text-indigo-700');
+             } else if (data.type === 'transcript.user' && data.text) {
+               appendTranscript(`Interviewer (You): ${data.text}`, 'text-slate-800');
+             } else if (data.type === 'session.error') {
+               isLive = false;
+               statusEl.textContent = 'Error';
+               statusEl.className = 'mt-4 inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800';
+               appendTranscript(`Voice agent error: ${data.message || data.error || 'Unknown AssemblyAI error'}`, 'text-red-700');
+               startBtn.disabled = false;
+             }
+           };
+
+           socket.onerror = () => {
+             isLive = false;
+             startBtn.disabled = false;
+             statusEl.textContent = 'Connection error';
+             statusEl.className = 'mt-4 inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800';
+             appendTranscript('The voice session could not connect. Check the server configuration and AssemblyAI API key.', 'text-red-700');
+           };
+
+           socket.onclose = () => {
+             if (isLive) {
+               isLive = false;
+               statusEl.textContent = 'Disconnected';
+               statusEl.className = 'mt-4 inline-flex rounded-full bg-slate-200 px-3 py-1 text-sm font-medium text-slate-800';
+             }
+           };
+
+
+          scriptProcessor.onaudioprocess = (e) => {
+            if (!socket || socket.readyState !== WebSocket.OPEN || !isLive) return;
+            const input = e.inputBuffer.getChannelData(0);
+
+            let sum = 0;
+            for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+            const rms = Math.sqrt(sum / input.length);
+            if (rms < 0.002) return;
+
+            const pcm = new Int16Array(input.length);
+            for (let i = 0; i < input.length; i++) {
+              const s = Math.max(-1, Math.min(1, input[i]));
+              pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+            }
+            const bytes = new Uint8Array(pcm.buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            socket.send(JSON.stringify({ type: 'input.audio', audio: btoa(binary) }));
+          };
+        } catch (err) {
+          statusEl.textContent = 'Error';
+          appendTranscript(`Error: ${err.message}`, 'text-red-700');
+          startBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

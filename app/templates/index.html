@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interviewa AI — Modern Voice Hiring Workspace</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              display: ['Outfit', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                50: '#fff7ed',
+                100: '#ffedd5',
+                500: '#e4572e',
+                600: '#c84b29',
+                700: '#9a3412',
+              },
+              navy: {
+                800: '#1e293b',
+                900: '#0f172a',
+                950: '#090d16',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+      }
+      .font-display {
+        font-family: 'Outfit', sans-serif;
+      }
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .glass-dark {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 9999px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 9999px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+    <div id="app" class="min-h-screen"></div>
+
+    <script>
+      const apiBase = '/api';
+      const app = document.getElementById('app');
+      const queryParams = new URLSearchParams(window.location.search);
+      const applyJobId = queryParams.get('apply');
+      const authMode = queryParams.get('auth');
+
+      // Global Tab States
+      let activeCandidateTab = 'jobs';
+      let activeHiringTab = 'reviews';
+
+      // Landing Page
+      function renderLanding() {
+        app.innerHTML = `
+          <div class="min-h-screen overflow-hidden bg-[#f7f4ee] text-slate-900">
+            <header class="relative z-10 border-b border-slate-900/10 backdrop-blur-md bg-white/40">
+              <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
+                <button id="brandHome" class="flex items-center gap-3 text-left focus:outline-none" aria-label="Interviewa AI home">
+                  <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-xl font-black text-white shadow-lg shadow-brand-500/25">ia</span>
+                  <span>
+                    <span class="block font-display text-xl font-black tracking-tight text-slate-900">Interviewa<span class="text-brand-500">.ai</span></span>
+                    <span class="block text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">Voice Intelligence</span>
+                  </span>
+                </button>
+                <nav class="flex items-center gap-3 text-sm font-semibold">
+                  <a href="/jobs" class="hidden px-4 py-2.5 text-slate-600 transition hover:text-slate-900 sm:inline">Open roles</a>
+                  <a href="#how-it-works" class="hidden px-4 py-2.5 text-slate-600 transition hover:text-slate-900 sm:inline">How it works</a>
+                  <button id="navLogin" class="rounded-full border border-slate-900/20 bg-white/80 px-6 py-2.5 text-slate-900 transition hover:border-slate-900 hover:bg-white shadow-sm">Log in</button>
+                </nav>
+              </div>
+            </header>
+
+            <main>
+              <section class="relative mx-auto max-w-7xl px-6 pb-20 pt-16 lg:px-10 lg:pb-28 lg:pt-24">
+                <div class="absolute -right-24 top-10 h-80 w-80 rounded-full bg-[#f4b942]/30 blur-3xl"></div>
+                <div class="absolute left-1/3 top-1/2 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl"></div>
+                
+                <div class="relative grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+                  <div>
+                    <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-50/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-700">
+                      <span class="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></span> Structured AI Voice Interviews
+                    </div>
+                    <h1 class="font-display max-w-3xl text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+                      Better interviews start with a <span class="bg-gradient-to-r from-brand-500 to-amber-500 bg-clip-text text-transparent">natural conversation</span>.
+                    </h1>
+                    <p class="mt-7 max-w-xl text-lg leading-8 text-slate-600">
+                      Interviewa helps candidates showcase authentic skills through real-time voice conversations while giving hiring teams deep, objective evidence to make confident decisions.
+                    </p>
+                    <div class="mt-9 flex flex-wrap items-center gap-4">
+                      <button id="heroLogin" class="rounded-full bg-gradient-to-r from-brand-500 to-brand-600 px-7 py-4 text-sm font-bold text-white shadow-xl shadow-brand-500/30 transition hover:-translate-y-0.5 hover:from-brand-600 hover:to-brand-700">
+                        Open Workspace <span aria-hidden="true" class="ml-1">→</span>
+                      </button>
+                      <a href="/jobs" class="rounded-full border border-slate-300 bg-white/80 px-6 py-4 text-sm font-bold text-slate-800 transition hover:bg-white hover:border-slate-400">
+                        Browse Open Jobs
+                      </a>
+                    </div>
+                    <div class="mt-12 flex flex-wrap items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <span class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Candidate & Hiring Dashboards</span>
+                      <span class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Real-Time Voice AI</span>
+                      <span class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg> Human Review Centric</span>
+                    </div>
+                  </div>
+
+                  <div class="relative mx-auto w-full max-w-lg">
+                    <div class="absolute -left-6 top-8 h-40 w-40 rounded-3xl bg-brand-500/20 blur-xl lg:-left-10"></div>
+                    <div class="relative rounded-[2.5rem] border border-slate-900/10 bg-navy-900 p-6 shadow-2xl shadow-slate-900/30 sm:p-8">
+                      <div class="flex items-center justify-between border-b border-white/10 pb-5 text-white">
+                        <div>
+                          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#f4b942]">Live Session</p>
+                          <p class="mt-1 font-display font-bold text-lg text-white">Senior Product Engineer</p>
+                        </div>
+                        <span class="flex items-center gap-2 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-400">
+                          <span class="h-2 w-2 animate-ping rounded-full bg-emerald-400"></span> Connected
+                        </span>
+                      </div>
+                      <div class="space-y-4 py-8">
+                        <div class="max-w-[90%] rounded-2xl rounded-tl-xs bg-white/10 p-4 text-sm leading-relaxed text-slate-200 backdrop-blur-sm border border-white/5">
+                          Tell me about a project where you had to make a complex architecture tradeoff under tight deadlines.
+                        </div>
+                        <div class="ml-auto max-w-[90%] rounded-2xl rounded-tr-xs bg-gradient-to-r from-brand-500 to-brand-600 p-4 text-sm leading-relaxed text-white shadow-lg">
+                          I simplified our initial microservice setup into a clean monolithic module to validate user flows 3 weeks faster...
+                        </div>
+                        <div class="flex items-center gap-3 pt-2 text-xs font-semibold text-slate-400">
+                          <span class="flex gap-1">
+                            <span class="h-2 w-2 rounded-full bg-[#f4b942] animate-bounce"></span>
+                            <span class="h-3 w-2 rounded-full bg-[#f4b942] animate-bounce [animation-delay:0.2s]"></span>
+                            <span class="h-4 w-2 rounded-full bg-[#f4b942] animate-bounce [animation-delay:0.4s]"></span>
+                          </span>
+                          Evaluating competency alignment...
+                        </div>
+                      </div>
+                      <div class="flex items-center justify-between border-t border-white/10 pt-5 text-xs font-medium text-slate-400">
+                        <span>Evidence captured for Hiring Team</span>
+                        <span class="font-bold text-white bg-white/10 px-2.5 py-1 rounded-full">Score: 92/100</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section id="how-it-works" class="border-y border-slate-900/10 bg-white/60">
+                <div class="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
+                  <div class="max-w-2xl">
+                    <p class="text-xs font-black uppercase tracking-[0.2em] text-brand-600">Tailored Workspaces</p>
+                    <h2 class="mt-3 font-display text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Designed for Candidates & Hiring Teams</h2>
+                  </div>
+                  <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:shadow-md">
+                      <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 text-xl font-bold">1</div>
+                      <h3 class="mt-5 font-display text-xl font-bold text-slate-900">Candidate Dashboard</h3>
+                      <p class="mt-3 text-sm leading-6 text-slate-600">Candidates search open vacancies, submit PDF applications with instant match screening, track status, and jump straight into live voice interviews.</p>
+                    </article>
+                    <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:shadow-md">
+                      <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 text-xl font-bold">2</div>
+                      <h3 class="mt-5 font-display text-xl font-bold text-slate-900">Hiring Team Workspace</h3>
+                      <p class="mt-3 text-sm leading-6 text-slate-600">Hiring managers and recruiters review AI-ranked candidate evidence, publish custom jobs, send instant interview invites, and log human decisions.</p>
+                    </article>
+                    <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:shadow-md">
+                      <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 text-xl font-bold">3</div>
+                      <h3 class="mt-5 font-display text-xl font-bold text-slate-900">Human-Centric Evidence</h3>
+                      <p class="mt-3 text-sm leading-6 text-slate-600">AI provides structured rationale and evidence scores, but final employment choices always remain in the hands of the human hiring team.</p>
+                    </article>
+                  </div>
+                </div>
+              </section>
+            </main>
+
+            <footer class="mx-auto flex max-w-7xl justify-between px-6 py-8 text-xs font-semibold text-slate-500 lg:px-10">
+              <span>© 2026 Interviewa AI</span>
+              <span>Candidate & Hiring Team Member Portals</span>
+            </footer>
+          </div>
+        `;
+
+        document.querySelectorAll('#navLogin, #heroLogin').forEach((btn) => btn.addEventListener('click', renderLogin));
+        document.getElementById('brandHome').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      }
+
+      // Login Screen
+      function renderLogin() {
+        app.innerHTML = `
+          <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-[#f7f4ee] to-slate-200 p-6">
+            <div class="w-full max-w-lg rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-2xl backdrop-blur-xl">
+              <button id="backToHome" class="mb-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 transition hover:text-slate-900">
+                ← Back to Home
+              </button>
+              
+              <div class="mb-8">
+                <div class="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600">
+                  Interviewa AI Authentication
+                </div>
+                <h1 class="mt-3 font-display text-3xl font-black text-slate-900">
+                  ${applyJobId ? 'Sign in to Apply' : 'Sign in to your Workspace'}
+                </h1>
+                <p class="mt-2 text-sm text-slate-500">Choose your member account type below or enter credentials.</p>
+              </div>
+
+              <!-- Quick Demo Member Selector -->
+              <div class="mb-6 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Quick Demo Logins (2 Members)</p>
+                <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <button type="button" id="quickCandidate" class="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50/70 p-3 text-left transition hover:bg-teal-100/70">
+                    <div>
+                      <p class="text-xs font-bold uppercase text-teal-800">Member: Candidate</p>
+                      <p class="text-xs text-teal-600">candidate@interviewa.ai</p>
+                    </div>
+                    <span class="text-xs font-bold text-teal-700">Select →</span>
+                  </button>
+                  <button type="button" id="quickHiring" class="flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50/70 p-3 text-left transition hover:bg-indigo-100/70">
+                    <div>
+                      <p class="text-xs font-bold uppercase text-indigo-800">Member: Hiring Team</p>
+                      <p class="text-xs text-indigo-600">hiring@interviewa.ai</p>
+                    </div>
+                    <span class="text-xs font-bold text-indigo-700">Select →</span>
+                  </button>
+                </div>
+              </div>
+
+              <form id="loginForm" class="space-y-4">
+                <div>
+                  <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Email Address</label>
+                  <input id="email" type="email" value="${applyJobId ? '' : 'hiring@interviewa.ai'}" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Password</label>
+                  <input id="password" type="password" value="password123" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+                <button class="w-full rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-500/25 transition hover:from-brand-600 hover:to-brand-700">
+                  Sign In to Workspace
+                </button>
+              </form>
+
+              <div class="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-5">
+                <button id="candidateRegister" class="text-xs font-bold text-teal-700 hover:underline">
+                  + Create Candidate Account
+                </button>
+                <button id="companyRegister" class="text-xs font-bold text-indigo-700 hover:underline">
+                  + Create Hiring Team Workspace
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('backToHome').addEventListener('click', renderLanding);
+        document.getElementById('candidateRegister').addEventListener('click', () => renderRegistration('candidate'));
+        document.getElementById('companyRegister').addEventListener('click', () => renderRegistration('company'));
+
+        document.getElementById('quickCandidate').addEventListener('click', () => {
+          document.getElementById('email').value = 'candidate@interviewa.ai';
+          document.getElementById('password').value = 'password123';
+        });
+
+        document.getElementById('quickHiring').addEventListener('click', () => {
+          document.getElementById('email').value = 'hiring@interviewa.ai';
+          document.getElementById('password').value = 'password123';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const response = await fetch(`${apiBase}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              email: document.getElementById('email').value,
+              password: document.getElementById('password').value,
+            }),
+          });
+
+          if (!response.ok) {
+            alert('Login failed. Please check your email and password.');
+            return;
+          }
+          renderDashboard();
+        });
+      }
+
+      // Registration Screen
+      function renderRegistration(type) {
+        const isCompany = type === 'company';
+        app.innerHTML = `
+          <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-[#f7f4ee] to-slate-200 p-6">
+            <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-2xl backdrop-blur-xl">
+              <button id="backToLogin" class="mb-6 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900">
+                ← Back to Login
+              </button>
+              <span class="inline-block rounded-full bg-${isCompany ? 'indigo' : 'teal'}-50 px-3 py-1 text-xs font-bold text-${isCompany ? 'indigo' : 'teal'}-700">
+                ${isCompany ? 'Member: Hiring Team' : 'Member: Candidate'} Registration
+              </span>
+              <h1 class="mt-3 font-display text-3xl font-black text-slate-900">
+                ${isCompany ? 'Create Hiring Team Workspace' : 'Create Candidate Account'}
+              </h1>
+
+              <form id="registrationForm" class="mt-6 space-y-4">
+                ${isCompany ? '<div><label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Company Name</label><input id="companyName" required placeholder="Acme Inc." class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" /></div>' : ''}
+                <div>
+                  <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Full Name</label>
+                  <input id="registerName" required placeholder="Alex Smith" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Email Address</label>
+                  <input id="registerEmail" type="email" required placeholder="alex@example.com" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Password</label>
+                  <input id="registerPassword" type="password" minlength="8" required placeholder="At least 8 characters" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+                <button class="w-full rounded-xl bg-${isCompany ? 'indigo-600' : 'teal-600'} px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:opacity-95">
+                  Create ${isCompany ? 'Hiring Team Account' : 'Candidate Account'}
+                </button>
+              </form>
+              <p id="registrationMessage" class="mt-4 text-xs font-semibold text-rose-600"></p>
+            </div>
+          </div>
+        `;
+        document.getElementById('backToLogin').addEventListener('click', renderLogin);
+        document.getElementById('registrationForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const response = await fetch(`${apiBase}/auth/register/${type}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              full_name: document.getElementById('registerName').value,
+              email: document.getElementById('registerEmail').value,
+              password: document.getElementById('registerPassword').value,
+              company_name: isCompany ? document.getElementById('companyName').value : null,
+            }),
+          });
+          if (!response.ok) {
+            document.getElementById('registrationMessage').textContent = (await response.json()).detail || 'Unable to create account';
+            return;
+          }
+          renderDashboard();
+        });
+      }
+
+      // ==========================================
+      // CANDIDATE MEMBER DASHBOARD
+      // ==========================================
+      async function renderCandidateWorkspace() {
+        const response = await fetch(`${apiBase}/candidate/dashboard`, { credentials: 'same-origin' });
+        const meResponse = await fetch(`${apiBase}/auth/me`, { credentials: 'same-origin' });
+        if (!response.ok || !meResponse.ok) {
+          renderLogin();
+          return;
+        }
+
+        const workspace = await response.json();
+        const me = await meResponse.json();
+        const selectedJob = applyJobId ? workspace.open_jobs.find((j) => String(j.id) === String(applyJobId)) : null;
+
+        app.innerHTML = `
+          <div class="min-h-screen bg-slate-100 pb-16">
+            <!-- Top Navigation Bar -->
+            <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+              <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 font-display text-sm font-black text-white shadow-md shadow-teal-600/20">C</span>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-display text-lg font-black tracking-tight text-slate-900">Interviewa</span>
+                      <span class="rounded-full bg-teal-100 px-2.5 py-0.5 text-[11px] font-bold text-teal-800">Member: Candidate</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                  <a href="/jobs" class="hidden text-xs font-bold text-slate-600 hover:text-slate-900 sm:inline-block">Public Job Board</a>
+                  <span class="hidden h-4 w-px bg-slate-300 sm:inline-block"></span>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs font-semibold text-slate-600">${me.full_name || me.email}</span>
+                    <button id="candidateLogout" class="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50">Logout</button>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <main class="mx-auto max-w-7xl px-6 pt-8">
+              <!-- Welcome Hero Banner -->
+              <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 p-8 text-white shadow-xl mb-8">
+                <div class="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl"></div>
+                <div class="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
+                  <div>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-teal-400/10 border border-teal-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-teal-300">
+                      Candidate Portal
+                    </span>
+                    <h1 class="mt-3 font-display text-3xl font-black text-white sm:text-4xl">
+                      Welcome back, ${me.full_name || 'Candidate'}!
+                    </h1>
+                    <p class="mt-2 text-sm text-slate-300 max-w-xl">
+                      Browse open opportunities, submit your resume with real-time match screening, and start structured voice interviews.
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-3">
+                    <button id="btnBrowseJobsTab" class="rounded-2xl bg-teal-500 px-5 py-3 text-xs font-bold text-slate-950 transition hover:bg-teal-400 shadow-lg shadow-teal-500/20">
+                      Explore Vacancies →
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Application Modal (if ?apply=JobId is present) -->
+              ${selectedJob ? `
+                <section class="mb-8 rounded-3xl border border-brand-500/30 bg-white p-7 shadow-lg">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600">Application in Progress</span>
+                      <h2 class="mt-2 font-display text-2xl font-black text-slate-900">${selectedJob.title}</h2>
+                      <p class="text-sm font-semibold text-slate-500">${selectedJob.company}</p>
+                    </div>
+                    <button id="cancelApplication" class="text-xs font-bold text-slate-400 hover:text-slate-700">Cancel ×</button>
+                  </div>
+                  <form id="candidateApplicationForm" class="mt-6">
+                    <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-700">Upload Resume (PDF)</label>
+                    <input id="candidateResume" type="file" accept="application/pdf,.pdf" required class="block w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3.5 text-sm file:mr-4 file:rounded-xl file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white" />
+                    <p class="mt-2 text-xs text-slate-500">Accepted: Text-based PDF under 10MB. Our screening engine will extract skills and score criteria alignment instantly.</p>
+                    <button class="mt-4 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/25 hover:from-brand-600 hover:to-brand-700">
+                      Submit Application & Run Screen →
+                    </button>
+                    <p id="candidateApplicationResult" class="mt-3 text-sm font-semibold"></p>
+                  </form>
+                </section>
+              ` : ''}
+
+              <!-- Stat Cards Grid -->
+              <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Open Vacancies</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 font-bold text-sm">💼</span>
+                  </div>
+                  <p class="mt-3 font-display text-3xl font-black text-slate-900">${workspace.open_jobs.length}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">My Applications</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm">📝</span>
+                  </div>
+                  <p class="mt-3 font-display text-3xl font-black text-slate-900">${workspace.applications.length}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Voice Interviews</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 font-bold text-sm">🎙️</span>
+                  </div>
+                  <p class="mt-3 font-display text-3xl font-black text-slate-900">${workspace.interviews.length}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Member Status</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 font-bold text-sm">✓</span>
+                  </div>
+                  <p class="mt-3 font-display text-lg font-bold text-emerald-700">Verified Candidate</p>
+                </div>
+              </div>
+
+              <!-- Dashboard Tabs -->
+              <div class="border-b border-slate-200 mb-6 flex flex-wrap gap-2">
+                <button id="tabCandJobs" class="cand-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeCandidateTab === 'jobs' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Open Vacancies (${workspace.open_jobs.length})
+                </button>
+                <button id="tabCandApps" class="cand-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeCandidateTab === 'apps' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  My Applications (${workspace.applications.length})
+                </button>
+                <button id="tabCandInterviews" class="cand-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeCandidateTab === 'interviews' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  My Interviews (${workspace.interviews.length})
+                </button>
+                <button id="tabCandInactive" class="cand-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeCandidateTab === 'inactive' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Inactive Vacancies (${workspace.inactive_jobs.length})
+                </button>
+              </div>
+
+              <!-- Tab Content Panels -->
+              <div id="candTabContent">
+                <!-- Panel 1: Open Vacancies -->
+                <div id="candPanelJobs" class="${activeCandidateTab === 'jobs' ? 'block' : 'hidden'}">
+                  <div class="grid gap-6 md:grid-cols-2">
+                    ${workspace.open_jobs.map((job) => `
+                      <article class="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                        <div>
+                          <div class="flex items-center justify-between">
+                            <span class="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-700">${job.company}</span>
+                            <span class="text-xs font-semibold text-slate-400">Full Time</span>
+                          </div>
+                          <h3 class="mt-3 font-display text-xl font-bold text-slate-900">${job.title}</h3>
+                          <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">${job.description}</p>
+                          <div class="mt-4 flex flex-wrap gap-1.5">
+                            ${job.criteria.map((c) => `<span class="rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">${c}</span>`).join('')}
+                          </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                          <span class="text-xs font-bold text-emerald-600">✓ Auto-Interview Eligible</span>
+                          <a href="/?auth=login&apply=${job.id}" class="rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-teal-700">
+                            Apply with Resume →
+                          </a>
+                        </div>
+                      </article>
+                    `).join('') || '<p class="rounded-2xl bg-white p-6 text-sm text-slate-500">No open vacancies available at the moment.</p>'}
+                  </div>
+                </div>
+
+                <!-- Panel 2: My Applications -->
+                <div id="candPanelApps" class="${activeCandidateTab === 'apps' ? 'block' : 'hidden'}">
+                  <div class="space-y-4">
+                    ${workspace.applications.map((appItem) => `
+                      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <span class="text-xs font-bold text-teal-700">${appItem.company}</span>
+                            <h3 class="font-display text-lg font-bold text-slate-900">${appItem.job}</h3>
+                          </div>
+                          <span class="rounded-full px-3 py-1 text-xs font-bold uppercase ${
+                            appItem.decision === 'passed' ? 'bg-emerald-100 text-emerald-800' :
+                            appItem.decision === 'failed' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                          }">Decision: ${appItem.decision}</span>
+                        </div>
+                        <div class="mt-4 flex items-center gap-4">
+                          <div class="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-teal-600 h-2.5 rounded-full" style="width: ${appItem.screening_score || 0}%"></div>
+                          </div>
+                          <span class="text-xs font-bold text-slate-700">Screen Score: ${appItem.screening_score ?? 'Pending'}/100</span>
+                        </div>
+                        <p class="mt-3 text-xs leading-relaxed text-slate-500">${appItem.screening_reason || 'Screening complete.'}</p>
+                      </div>
+                    `).join('') || '<p class="rounded-2xl bg-white p-6 text-sm text-slate-500">You have not submitted any job applications yet.</p>'}
+                  </div>
+                </div>
+
+                <!-- Panel 3: My Interviews -->
+                <div id="candPanelInterviews" class="${activeCandidateTab === 'interviews' ? 'block' : 'hidden'}">
+                  <div class="space-y-4">
+                    ${workspace.interviews.map((item) => `
+                      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <span class="text-xs font-bold text-teal-700">${item.company}</span>
+                            <h3 class="font-display text-lg font-bold text-slate-900">${item.job}</h3>
+                          </div>
+                          <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 uppercase">${item.status}</span>
+                        </div>
+                        <p class="mt-2 text-xs font-medium text-slate-500">
+                          ${item.score !== null ? `AI Evidence Evaluation Score: ${item.score}/100` : 'Voice Interview Score: Pending completion'}
+                        </p>
+                        ${item.interview_link ? `
+                          <div class="mt-4 pt-3 border-t border-slate-100">
+                            <a href="${item.interview_link}" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-500 shadow-md shadow-indigo-500/20">
+                              <span>🎙️ Start AI Voice Interview Now</span> →
+                            </a>
+                          </div>
+                        ` : ''}
+                      </div>
+                    `).join('') || '<p class="rounded-2xl bg-white p-6 text-sm text-slate-500">No interviews assigned yet.</p>'}
+                  </div>
+                </div>
+
+                <!-- Panel 4: Inactive Vacancies -->
+                <div id="candPanelInactive" class="${activeCandidateTab === 'inactive' ? 'block' : 'hidden'}">
+                  <div class="grid gap-4 md:grid-cols-2">
+                    ${workspace.inactive_jobs.map((job) => `
+                      <div class="rounded-2xl border border-slate-200 bg-white p-5 opacity-75">
+                        <span class="text-xs font-bold text-slate-400">${job.company}</span>
+                        <h4 class="font-display font-bold text-slate-700">${job.title}</h4>
+                        <span class="mt-2 inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-slate-500">${job.status}</span>
+                      </div>
+                    `).join('') || '<p class="rounded-2xl bg-white p-6 text-sm text-slate-500">No inactive vacancies.</p>'}
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        `;
+
+        // Event listeners for Candidate Dashboard
+        document.getElementById('candidateLogout').addEventListener('click', async () => {
+          await fetch(`${apiBase}/auth/logout`, { method: 'POST', credentials: 'same-origin' });
+          renderLanding();
+        });
+
+        if (document.getElementById('btnBrowseJobsTab')) {
+          document.getElementById('btnBrowseJobsTab').addEventListener('click', () => switchCandidateTab('jobs'));
+        }
+        document.getElementById('tabCandJobs').addEventListener('click', () => switchCandidateTab('jobs'));
+        document.getElementById('tabCandApps').addEventListener('click', () => switchCandidateTab('apps'));
+        document.getElementById('tabCandInterviews').addEventListener('click', () => switchCandidateTab('interviews'));
+        document.getElementById('tabCandInactive').addEventListener('click', () => switchCandidateTab('inactive'));
+
+        if (document.getElementById('cancelApplication')) {
+          document.getElementById('cancelApplication').addEventListener('click', () => {
+            window.history.replaceState({}, '', '/');
+            renderCandidateWorkspace();
+          });
+        }
+
+        if (document.getElementById('candidateApplicationForm')) {
+          document.getElementById('candidateApplicationForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const result = document.getElementById('candidateApplicationResult');
+            const formData = new FormData();
+            formData.append('resume', document.getElementById('candidateResume').files[0]);
+
+            result.textContent = 'Screening resume and building interview session...';
+            result.className = 'mt-3 text-xs font-bold text-indigo-600';
+
+            const resp = await fetch(`${apiBase}/jobs/${selectedJob.id}/apply`, {
+              method: 'POST',
+              credentials: 'same-origin',
+              body: formData,
+            });
+            const payload = await resp.json();
+            if (resp.ok) {
+              result.className = 'mt-3 text-xs font-bold text-emerald-700';
+              result.textContent = 'Application submitted successfully! Redirecting to applications...';
+              setTimeout(() => {
+                window.history.replaceState({}, '', '/');
+                activeCandidateTab = 'apps';
+                renderCandidateWorkspace();
+              }, 1200);
+            } else {
+              result.className = 'mt-3 text-xs font-bold text-rose-700';
+              result.textContent = payload.detail || 'Unable to submit application.';
+            }
+          });
+        }
+      }
+
+      function switchCandidateTab(tabKey) {
+        activeCandidateTab = tabKey;
+        ['jobs', 'apps', 'interviews', 'inactive'].forEach((key) => {
+          const panel = document.getElementById(`candPanel${key.charAt(0).toUpperCase() + key.slice(1)}`);
+          const btn = document.getElementById(`tabCand${key.charAt(0).toUpperCase() + key.slice(1)}`);
+          if (panel && btn) {
+            if (key === tabKey) {
+              panel.classList.remove('hidden');
+              btn.className = 'cand-tab border-b-2 border-teal-600 px-4 py-3 text-sm font-bold text-teal-700 transition';
+            } else {
+              panel.classList.add('hidden');
+              btn.className = 'cand-tab border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition';
+            }
+          }
+        });
+      }
+
+
+      // ==========================================
+      // HIRING TEAM MEMBER DASHBOARD
+      // ==========================================
+      async function renderDashboard() {
+        const summaryResponse = await fetch(`${apiBase}/dashboard/summary`, { credentials: 'same-origin' });
+        const meResponse = await fetch(`${apiBase}/auth/me`, { credentials: 'same-origin' });
+
+        if (!summaryResponse.ok || !meResponse.ok) {
+          renderLogin();
+          return;
+        }
+
+        const data = await summaryResponse.json();
+        const user = await meResponse.json();
+        const role = user.role || 'Hiring Team';
+
+        if (role === 'Candidate') {
+          await renderCandidateWorkspace();
+          return;
+        }
+
+        // Hiring Team Workspace Render
+        app.innerHTML = `
+          <div class="min-h-screen bg-slate-100 pb-16">
+            <!-- Top Navigation Bar -->
+            <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+              <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 font-display text-sm font-black text-white shadow-md shadow-indigo-600/20">H</span>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-display text-lg font-black tracking-tight text-slate-900">${data.company || 'Company'}</span>
+                      <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-800">Member: Hiring Team</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                  <span class="text-xs font-semibold text-slate-600">${user.full_name || user.email}</span>
+                  <button id="logoutBtn" class="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50">Logout</button>
+                </div>
+              </div>
+            </header>
+
+            <main class="mx-auto max-w-7xl px-6 pt-8">
+              <!-- Welcome Hero Banner -->
+              <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl mb-8">
+                <div class="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl"></div>
+                <div class="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
+                  <div>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-indigo-400/10 border border-indigo-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-300">
+                      Hiring Team Portal
+                    </span>
+                    <h1 class="mt-3 font-display text-3xl font-black text-white sm:text-4xl">
+                      Workspace for ${data.company || 'Acme Labs'}
+                    </h1>
+                    <p class="mt-2 text-sm text-slate-300 max-w-xl">
+                      Review AI-ranked candidate evidence, manage open job vacancies, send instant voice interview invites, and log final human decisions.
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-3">
+                    <button id="btnQuickPublish" class="rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 px-5 py-3 text-xs font-bold text-white shadow-lg transition hover:from-brand-600 hover:to-brand-700">
+                      + Publish New Job
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stat Cards Grid -->
+              <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Active Jobs</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm">💼</span>
+                  </div>
+                  <p class="mt-3 font-display text-3xl font-black text-slate-900">${data.jobs}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Screened Candidates</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 font-bold text-sm">👥</span>
+                  </div>
+                  <p class="mt-3 font-display text-3xl font-black text-slate-900">${data.candidates}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Voice Interviews</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 font-bold text-sm">🎙️</span>
+                  </div>
+                  <p class="mt-3 font-display text-3xl font-black text-slate-900">${data.interviews}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Decision Mandate</span>
+                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 font-bold text-sm">⚖️</span>
+                  </div>
+                  <p class="mt-3 font-display text-sm font-bold text-slate-800">Human Review Required</p>
+                </div>
+              </div>
+
+              <!-- Workspace Navigation Tabs -->
+              <div class="border-b border-slate-200 mb-6 flex flex-wrap gap-2">
+                <button id="tabHiringReviews" class="hiring-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeHiringTab === 'reviews' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Candidate Reviews & Ranking
+                </button>
+                <button id="tabHiringPublish" class="hiring-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeHiringTab === 'publish' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Publish & Manage Jobs
+                </button>
+                <button id="tabHiringInvite" class="hiring-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeHiringTab === 'invite' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Invite Candidates
+                </button>
+                <button id="tabHiringInterviews" class="hiring-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeHiringTab === 'interviews' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Interview Logs
+                </button>
+                <button id="tabHiringSimulator" class="hiring-tab border-b-2 px-4 py-3 text-sm font-bold transition ${activeHiringTab === 'simulator' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">
+                  Interviewer Simulator
+                </button>
+              </div>
+
+              <!-- Tab Content Panels -->
+              <div id="hiringTabContent">
+                <!-- Panel 1: Candidate Reviews & Ranking -->
+                <div id="hiringPanelReviews" class="${activeHiringTab === 'reviews' ? 'block' : 'hidden'}">
+                  <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                      <div>
+                        <h2 class="font-display text-xl font-bold text-slate-900">Ranked Applications</h2>
+                        <p class="text-xs text-slate-500">Candidates ordered by combined resume match & AI interview evidence score.</p>
+                      </div>
+                      <div class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-bold text-amber-800">
+                        Human review required for decision
+                      </div>
+                    </div>
+                    <div id="applicationReviewList" class="space-y-4"></div>
+                  </div>
+                </div>
+
+                <!-- Panel 2: Publish & Manage Jobs -->
+                <div id="hiringPanelPublish" class="${activeHiringTab === 'publish' ? 'block' : 'hidden'}">
+                  <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm max-w-3xl">
+                    <h2 class="font-display text-xl font-bold text-slate-900">Publish a New Vacancy</h2>
+                    <p class="mt-1 text-xs text-slate-500">Specify requirements and competencies to automatically screen applicants.</p>
+                    <form id="jobForm" class="mt-6 space-y-4">
+                      <div>
+                        <label class="mb-1 block text-xs font-bold uppercase text-slate-700">Job Title</label>
+                        <input id="jobTitle" required placeholder="e.g. Senior Frontend Engineer" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-bold uppercase text-slate-700">Description & Responsibilities</label>
+                        <textarea id="jobDescription" required placeholder="Describe the role responsibilities, required tech stack, and goals..." class="min-h-32 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"></textarea>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-bold uppercase text-slate-700">Key Criteria & Skills (Comma separated)</label>
+                        <input id="jobCriteria" placeholder="React, TypeScript, Tailwind, REST APIs, Teamwork" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                      </div>
+                      <button class="rounded-xl bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-brand-600">
+                        Publish Vacancy Immediately
+                      </button>
+                    </form>
+                    <p id="jobResult" class="mt-4 text-xs font-bold text-emerald-700"></p>
+                  </div>
+                </div>
+
+                <!-- Panel 3: Invite Candidate -->
+                <div id="hiringPanelInvite" class="${activeHiringTab === 'invite' ? 'block' : 'hidden'}">
+                  <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm max-w-2xl">
+                    <h2 class="font-display text-xl font-bold text-slate-900">Prepare Interview & Invite Candidate</h2>
+                    <p class="mt-1 text-xs text-slate-500">Generate a secure voice interview link to send directly to a candidate.</p>
+
+                    <form id="inviteForm" class="mt-6 space-y-4">
+                      <div>
+                        <label class="mb-1 block text-xs font-bold uppercase text-slate-700">Candidate Full Name</label>
+                        <input id="candidateName" type="text" placeholder="Jane Candidate" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" required />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-bold uppercase text-slate-700">Candidate Email</label>
+                        <input id="candidateEmail" type="email" placeholder="jane@example.com" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" required />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-bold uppercase text-slate-700">Company ID</label>
+                        <input id="companyId" type="number" value="${data.company_id || 1}" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" required />
+                      </div>
+                      <button class="w-full rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-500">
+                        Generate & Send Interview Invitation Link
+                      </button>
+                    </form>
+
+                    <div id="inviteResult" class="mt-5 hidden rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800"></div>
+                  </div>
+                </div>
+
+                <!-- Panel 4: Interview Logs -->
+                <div id="hiringPanelInterviews" class="${activeHiringTab === 'interviews' ? 'block' : 'hidden'}">
+                  <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                    <h2 class="font-display text-xl font-bold text-slate-900">Voice Interview Sessions</h2>
+                    <div id="interviewList" class="mt-6 space-y-3"></div>
+                  </div>
+                </div>
+
+                <!-- Panel 5: Simulator -->
+                <div id="hiringPanelSimulator" class="${activeHiringTab === 'simulator' ? 'block' : 'hidden'}">
+                  <div class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                    <h2 class="font-display text-xl font-bold text-slate-900">Interviewer Practice Simulator</h2>
+                    <p class="mt-1 text-xs text-slate-500">Hiring team members can practice voice interviewing with standard candidate personas.</p>
+                    <div id="personaGrid" class="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        `;
+
+        // Event listeners for Hiring Team Dashboard
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+          await fetch(`${apiBase}/auth/logout`, { method: 'POST', credentials: 'same-origin' });
+          renderLogin();
+        });
+
+        if (document.getElementById('btnQuickPublish')) {
+          document.getElementById('btnQuickPublish').addEventListener('click', () => switchHiringTab('publish'));
+        }
+
+        document.getElementById('tabHiringReviews').addEventListener('click', () => switchHiringTab('reviews'));
+        document.getElementById('tabHiringPublish').addEventListener('click', () => switchHiringTab('publish'));
+        document.getElementById('tabHiringInvite').addEventListener('click', () => switchHiringTab('invite'));
+        document.getElementById('tabHiringInterviews').addEventListener('click', () => switchHiringTab('interviews'));
+        document.getElementById('tabHiringSimulator').addEventListener('click', () => switchHiringTab('simulator'));
+
+        // Forms & API Calls
+        document.getElementById('jobForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const response = await fetch(`${apiBase}/employer/jobs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              title: document.getElementById('jobTitle').value,
+              description: document.getElementById('jobDescription').value,
+              competencies: document.getElementById('jobCriteria').value.split(',').map((s) => s.trim()).filter(Boolean),
+              publish: true,
+            }),
+          });
+          const result = document.getElementById('jobResult');
+          result.textContent = response.ok ? 'Vacancy published successfully to job board.' : ((await response.json()).detail || 'Unable to publish job');
+        });
+
+        document.getElementById('inviteForm').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const payload = {
+            company_id: Number(document.getElementById('companyId').value),
+            candidate_name: document.getElementById('candidateName').value,
+            candidate_email: document.getElementById('candidateEmail').value,
+          };
+          const resultBox = document.getElementById('inviteResult');
+          try {
+            const resp = await fetch(`${apiBase}/recruiter/invite-candidate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify(payload),
+            });
+            if (!resp.ok) throw new Error('Failed to create invitation');
+            const invite = await resp.json();
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = `Interview session created! Share Link: <a href="${invite.share_url}" class="font-bold underline text-emerald-900">${invite.share_url}</a>`;
+          } catch (e) {
+            resultBox.classList.remove('hidden');
+            resultBox.className = 'mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700';
+            resultBox.textContent = 'Unable to prepare interview invitation.';
+          }
+        });
+
+        // Load data for reviews, interviews, and personas
+        loadEmployerApplications();
+        loadEmployerInterviews();
+        loadEmployerPersonas();
+      }
+
+      function switchHiringTab(tabKey) {
+        activeHiringTab = tabKey;
+        ['reviews', 'publish', 'invite', 'interviews', 'simulator'].forEach((key) => {
+          const panel = document.getElementById(`hiringPanel${key.charAt(0).toUpperCase() + key.slice(1)}`);
+          const btn = document.getElementById(`tabHiring${key.charAt(0).toUpperCase() + key.slice(1)}`);
+          if (panel && btn) {
+            if (key === tabKey) {
+              panel.classList.remove('hidden');
+              btn.className = 'hiring-tab border-b-2 border-indigo-600 px-4 py-3 text-sm font-bold text-indigo-700 transition';
+            } else {
+              panel.classList.add('hidden');
+              btn.className = 'hiring-tab border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition';
+            }
+          }
+        });
+      }
+
+      async function loadEmployerApplications() {
+        const response = await fetch(`${apiBase}/employer/applications`, { credentials: 'same-origin' });
+        if (!response.ok) return;
+        const rows = await response.json();
+        const list = document.getElementById('applicationReviewList');
+        if (!list) return;
+
+        if (!rows.length) {
+          list.innerHTML = '<p class="text-sm text-slate-500">No candidate applications submitted yet.</p>';
+          return;
+        }
+
+        list.innerHTML = rows.map((item) => `
+          <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 transition hover:bg-white hover:shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span class="text-xs font-bold text-indigo-600">Applicant: ${item.candidate}</span>
+                <h4 class="font-display font-bold text-slate-900 text-lg">${item.job}</h4>
+                <p class="text-xs text-slate-500">${item.email}</p>
+              </div>
+              <div class="text-right">
+                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black text-indigo-800">Combined Rank: ${item.rank_score}/100</span>
+              </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 text-xs">
+              <div class="rounded-xl border border-slate-200 bg-white p-3">
+                <span class="text-slate-500">Resume Screen Score</span>
+                <p class="font-bold text-slate-900 text-sm mt-0.5">${item.screening_score ?? 'Pending'}/100</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-white p-3">
+                <span class="text-slate-500">AI Voice Interview Score</span>
+                <p class="font-bold text-slate-900 text-sm mt-0.5">${item.interview_score ?? 'Pending'}/100</p>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500">Record Human Decision:</span>
+              <div class="flex gap-2">
+                <button data-id="${item.application_id}" data-decision="passed" class="reviewDecision rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 shadow-sm">
+                  ✓ Pass Candidate
+                </button>
+                <button data-id="${item.application_id}" data-decision="failed" class="reviewDecision rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-rose-700 shadow-sm">
+                  ✕ Fail Candidate
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        document.querySelectorAll('.reviewDecision').forEach((button) => {
+          button.addEventListener('click', async () => {
+            await fetch(`${apiBase}/employer/applications/${button.dataset.id}/decision`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ decision: button.dataset.decision }),
+            });
+            loadEmployerApplications();
+          });
+        });
+      }
+
+      async function loadEmployerInterviews() {
+        const resp = await fetch(`${apiBase}/recruiter/interviews`, { credentials: 'same-origin' });
+        if (!resp.ok) return;
+        const interviews = await resp.json();
+        const list = document.getElementById('interviewList');
+        if (!list) return;
+
+        if (!interviews.length) {
+          list.innerHTML = '<p class="text-sm text-slate-500">No interview sessions prepared yet.</p>';
+          return;
+        }
+
+        list.innerHTML = interviews.map((item) => `
+          <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-900 text-sm">${item.candidate_name}</span>
+              <span class="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-bold text-slate-700">${item.status}</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">${item.candidate_email}</p>
+            ${item.share_url ? `<a class="mt-2 inline-block text-xs font-bold text-indigo-700 underline" href="${item.share_url}">Open Candidate Room →</a>` : ''}
+          </div>
+        `).join('');
+      }
+
+      async function loadEmployerPersonas() {
+        const resp = await fetch(`${apiBase}/recruiter/training/personas`, { credentials: 'same-origin' });
+        if (!resp.ok) return;
+        const personas = await resp.json();
+        const grid = document.getElementById('personaGrid');
+        if (!grid) return;
+
+        grid.innerHTML = Object.entries(personas).map(([key, p]) => `
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col justify-between">
+            <div>
+              <h4 class="font-display font-bold text-slate-900">${p.name}</h4>
+              <p class="mt-2 text-xs leading-relaxed text-slate-600">${p.description}</p>
+            </div>
+            <a href="/api/recruiter/training/${key}" target="_blank" class="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-center text-xs font-bold text-indigo-700 transition hover:bg-indigo-100">
+              Start Practice Session →
+            </a>
+          </div>
+        `).join('');
+      }
+
+      // Bootstrap app entry
+      async function bootstrap() {
+        try {
+          const response = await fetch(`${apiBase}/dashboard/summary`, { credentials: 'same-origin' });
+          if (response.ok) {
+            renderDashboard();
+          } else {
+            authMode === 'login' ? renderLogin() : renderLanding();
+          }
+        } catch (error) {
+          authMode === 'login' ? renderLogin() : renderLanding();
+        }
+      }
+
+      bootstrap();
+    </script>
+  </body>
+</html>

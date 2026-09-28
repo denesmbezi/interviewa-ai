@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interviewa AI Interview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-100 min-h-screen p-6 text-slate-800">
+    <div class="mx-auto max-w-4xl rounded-3xl bg-white p-8 shadow-lg ring-1 ring-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.2em] text-indigo-600">Interviewa AI</p>
+          <h1 class="mt-2 text-3xl font-bold">Candidate Interview</h1>
+        </div>
+        <span id="statusBadge" class="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">Connecting</span>
+      </div>
+
+      <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+        <p class="text-sm text-slate-600">Interview notice</p>
+        <h2 class="mt-2 text-2xl font-semibold">Acme Labs — Senior Product Engineer</h2>
+        <p class="mt-4 text-slate-700">
+          This interview is for evidence collection and human review only. AI-generated interview evidence is advisory and never makes an employment decision.
+        </p>
+
+        <div class="mt-6 space-y-3">
+          <label class="flex items-start gap-3 text-sm text-slate-700">
+            <input id="consentCheck" type="checkbox" class="mt-1 h-4 w-4" />
+            <span>I consent to the recording, transcription, and review of this interview for assessment and human review purposes.</span>
+          </label>
+          <label class="flex items-start gap-3 text-sm text-slate-700">
+            <input id="humanReviewCheck" type="checkbox" class="mt-1 h-4 w-4" />
+            <span>I would like a human interviewer to review my request and I understand I can request accommodations.</span>
+          </label>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button id="startBtn" class="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">Start interview</button>
+          <button id="pauseBtn" class="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-100">Pause</button>
+        </div>
+      </div>
+
+      <div class="mt-8 grid gap-4 md:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <p class="text-sm text-slate-500">Live transcript</p>
+          <div id="transcript" class="mt-3 min-h-40 space-y-2 text-sm text-slate-700">
+            <p>AI interviewer: Hello, I’m Interviewa AI. I’ll ask a few structured questions about your experience and fit for the role.</p>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <p class="text-sm text-slate-500">Interview state</p>
+          <ul id="states" class="mt-3 space-y-2 text-sm text-slate-700">
+            <li>• Listening</li>
+            <li>• Processing</li>
+            <li>• Speaking</li>
+            <li>• Completed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const statusBadge = document.getElementById('statusBadge');
+      const transcript = document.getElementById('transcript');
+      const startBtn = document.getElementById('startBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const consentCheck = document.getElementById('consentCheck');
+
+      async function startInterview() {
+        statusBadge.textContent = 'Ready';
+        statusBadge.className = 'rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800';
+
+        if (!consentCheck.checked) {
+          transcript.innerHTML += '<p class="text-amber-700">Candidate must provide consent before the interview can proceed.</p>';
+          return;
+        }
+
+        try {
+          const tokenResponse = await fetch('/api/assemblyai/session-token', { method: 'POST', credentials: 'same-origin' });
+          if (!tokenResponse.ok) {
+            throw new Error('Session token request failed');
+          }
+          const payload = await tokenResponse.json();
+          transcript.innerHTML += `<p class="text-slate-600">Voice session created. Token received: ${payload.token.slice(0, 8)}...</p>`;
+          statusBadge.textContent = 'Interview ready';
+          statusBadge.className = 'rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800';
+        } catch (error) {
+          statusBadge.textContent = 'Error';
+          statusBadge.className = 'rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800';
+          transcript.innerHTML += '<p class="text-red-700">Unable to create a live AssemblyAI session. Check the server configuration and API key.</p>';
+        }
+      }
+
+      startBtn.addEventListener('click', startInterview);
+      pauseBtn.addEventListener('click', () => {
+        statusBadge.textContent = 'Paused';
+        statusBadge.className = 'rounded-full bg-slate-200 px-3 py-1 text-sm font-medium text-slate-700';
+      });
+    </script>
+  </body>
+</html>
